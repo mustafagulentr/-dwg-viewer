@@ -6,7 +6,7 @@ ARG LIBREDWG_VERSION=0.13.3
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential ca-certificates curl xz-utils \
-        libtool pkg-config \
+        libtool pkg-config python3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
@@ -15,7 +15,7 @@ RUN curl -fsSL "https://github.com/LibreDWG/libredwg/releases/download/${LIBREDW
         -o libredwg.tar.xz \
     && tar xf libredwg.tar.xz \
     && cd "libredwg-${LIBREDWG_VERSION}" \
-    && ./configure --disable-shared --enable-static --disable-bindings --disable-werror \
+    && ./configure --disable-shared --enable-static --disable-bindings --disable-werror PYTHON=python3 \
     && make -j"$(nproc)" \
     && cp programs/dwg2dxf /usr/local/bin/dwg2dxf \
     && strip /usr/local/bin/dwg2dxf
