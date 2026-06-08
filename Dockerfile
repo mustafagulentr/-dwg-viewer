@@ -2,19 +2,19 @@
 # LibreDWG GPL. AYRI binary olarak derlenir, uygulamaya linklenmez (GPL bulaşmaz).
 FROM debian:bookworm-slim AS libredwg
 
-ARG LIBREDWG_VERSION=0.13.3
+# git master derlenir — modern DWG (2013/2018/2020+) için release'ten çok daha iyi
+ARG LIBREDWG_REF=master
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential ca-certificates curl xz-utils \
-        libtool pkg-config python3 \
+        build-essential ca-certificates git \
+        autoconf automake libtool pkg-config texinfo python3 perl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
-# Release tarball'unda configure hazır gelir (autogen gerekmez)
-RUN curl -fsSL "https://github.com/LibreDWG/libredwg/releases/download/${LIBREDWG_VERSION}/libredwg-${LIBREDWG_VERSION}.tar.xz" \
-        -o libredwg.tar.xz \
-    && tar xf libredwg.tar.xz \
-    && cd "libredwg-${LIBREDWG_VERSION}" \
+# git master'da configure yok → autogen.sh ile üret
+RUN git clone --depth 1 --branch "${LIBREDWG_REF}" https://github.com/LibreDWG/libredwg.git \
+    && cd libredwg \
+    && sh ./autogen.sh \
     && ./configure --disable-shared --enable-static --disable-bindings --disable-werror PYTHON=python3 \
     && make -j"$(nproc)" \
     && cp programs/dwg2dxf /usr/local/bin/dwg2dxf \
