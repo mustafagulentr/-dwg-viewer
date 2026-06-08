@@ -2,8 +2,10 @@
 # LibreDWG GPL. AYRI binary olarak derlenir, uygulamaya linklenmez (GPL bulaşmaz).
 FROM debian:bookworm-slim AS libredwg
 
-# git master derlenir — modern DWG (2013/2018/2020+) için release'ten çok daha iyi
-ARG LIBREDWG_REF=master
+# Belirli libredwg master commit'i derlenir — modern DWG (2013/2018/2020+) için
+# release'ten çok daha iyi. Commit'e sabitlenir: tekrar derlemede aynı kod (supply
+# chain güvenliği + çalışan sürüm bozulmaz). Bilerek güncelle: SHA'yı değiştir.
+ARG LIBREDWG_COMMIT=08c034a224a4e9512b1cd62e74b5cf081a4cfa89
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential ca-certificates git \
@@ -11,9 +13,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
-# git master'da configure yok → autogen.sh ile üret
-RUN git clone --depth 1 --branch "${LIBREDWG_REF}" https://github.com/LibreDWG/libredwg.git \
+# git master'da configure yok → autogen.sh ile üret. Commit clone sonrası doğrulanır.
+RUN git clone https://github.com/LibreDWG/libredwg.git \
     && cd libredwg \
+    && git checkout "${LIBREDWG_COMMIT}" \
+    && test "$(git rev-parse HEAD)" = "${LIBREDWG_COMMIT}" \
     && sh ./autogen.sh \
     && ./configure --disable-shared --enable-static --disable-bindings --disable-werror PYTHON=python3 \
     && make -j"$(nproc)" \
